@@ -11,8 +11,8 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 from zoneinfo import ZoneInfo
 
+import httpx
 from fastapi import FastAPI, HTTPException
-from playwright.async_api import async_playwright
 
 from . import config
 from .models import HealthResponse, Ship, ShipsResponse
@@ -42,18 +42,17 @@ class _Cache:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Playwright + Browser einmalig für die Prozesslaufzeit starten.
+    # Einen HTTP-Client für die Prozesslaufzeit teilen (Connection-Reuse).
     app.state.cache = _Cache(config.CACHE_TTL_SECONDS)
-    app.state.playwright = await async_playwright().start()
-    app.state.browser = await app.state.playwright.chromium.launch(
-        headless=True,
-        args=["--no-sandbox", "--disable-dev-shm-usage"],
+    app.state.client = httpx.AsyncClient(
+        headers={"User-Agent": config.USER_AGENT},
+        timeout=config.HTTP_TIMEOUT_SECONDS,
+        follow_redirects=True,
     )
     try:
         yield
     finally:
-        await app.state.browser.close()
-        await app.state.playwright.stop()
+        await app.state.client.aclose()
 
 
 app = FastAPI(
@@ -77,14 +76,14 @@ async def _get_ships(app: FastAPI) -> List[dict]:
         if cached is not None:
             return cached
 
-    # Lock verhindert parallele Browser-Starts bei gleichzeitigen Requests.
+    # Lock verhindert parallele Scrapes bei gleichzeitigen Requests.
     async with cache.lock:
         if config.CACHE_TTL_SECONDS > 0:
             cached = cache.get()
             if cached is not None:
                 return cached
         try:
-            data = await scrape(app.state.browser)
+            data = await scrape(app.state.client)
         except Exception as exc:  # noqa: BLE001
             raise HTTPException(
                 status_code=502,
@@ -123,11 +122,7 @@ async def root():
 
 @app.get("/health", response_model=HealthResponse, tags=["meta"])
 async def health():
-    browser = getattr(app.state, "browser", None)
-    return HealthResponse(
-        status="ok",
-        browser_ready=bool(browser and browser.is_connected()),
-    )
+    return HealthResponse(status="ok")
 
 
 @app.get("/ships", response_model=ShipsResponse, tags=["ships"])

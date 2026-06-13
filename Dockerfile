@@ -1,15 +1,11 @@
-# Offizielles Playwright-Python-Image: Browser + Systemabhängigkeiten sind
-# bereits vorinstalliert. Version muss zu playwright in requirements.txt passen.
-FROM mcr.microsoft.com/playwright/python:v1.49.1-noble
+# Schlankes Python-Image – kein Browser nötig, da nur per HTTP gescrapt wird.
+FROM python:3.12-slim
 
 WORKDIR /app
 
 # Abhängigkeiten zuerst (besseres Layer-Caching).
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Sicherstellen, dass der Chromium-Browser vorhanden ist (idempotent).
-RUN playwright install chromium
 
 COPY app ./app
 

@@ -1,6 +1,7 @@
-"""Scraping der JadeWeserPort-Schiffsankünfte mit Playwright.
+"""Scraping der JadeWeserPort-Schiffsankünfte per HTTP.
 
-Der HTML-Aufbau der Seite (Stand 2026):
+Die Seite rendert die Tabelle serverseitig – ein einfacher HTTP-GET reicht,
+ein Browser ist nicht nötig. Der HTML-Aufbau (Stand 2026):
 
     <div class="arrivals">
       <div class="headline"> ... </div>
@@ -24,6 +25,7 @@ from datetime import datetime
 from typing import List, Optional
 from zoneinfo import ZoneInfo
 
+import httpx
 from bs4 import BeautifulSoup
 
 from . import config
@@ -60,9 +62,9 @@ def _parse_tdw(text: str) -> Optional[int]:
 
 
 def parse_arrivals(html: str) -> List[dict]:
-    """Parst das gerenderte HTML zu einer Liste von Schiffs-Dicts.
+    """Parst das HTML zu einer Liste von Schiffs-Dicts.
 
-    Reine Funktion ohne Browser – dadurch isoliert testbar.
+    Reine Funktion – dadurch isoliert testbar (ohne Netzwerk).
     """
     tz = ZoneInfo(config.TIMEZONE)
     soup = BeautifulSoup(html, "lxml")
@@ -98,33 +100,14 @@ def parse_arrivals(html: str) -> List[dict]:
     return ships
 
 
-async def fetch_html(browser) -> str:
-    """Ruft die Seite mit einem geteilten Playwright-Browser ab.
-
-    Pro Aufruf wird ein frischer Browser-Context erzeugt und wieder
-    geschlossen; der Browser selbst bleibt für die Prozesslaufzeit bestehen.
-    """
-    context = await browser.new_context(
-        user_agent=config.USER_AGENT,
-        locale="de-DE",
-    )
-    try:
-        page = await context.new_page()
-        await page.goto(
-            config.SOURCE_URL,
-            timeout=config.NAV_TIMEOUT_MS,
-            wait_until="domcontentloaded",
-        )
-        # Sicherstellen, dass die Tabelle im DOM ist (nicht zwingend sichtbar).
-        await page.wait_for_selector(
-            ".arrivals .line", state="attached", timeout=config.NAV_TIMEOUT_MS
-        )
-        return await page.content()
-    finally:
-        await context.close()
+async def fetch_html(client: httpx.AsyncClient) -> str:
+    """Ruft die Seite per HTTP-GET ab und liefert das HTML."""
+    resp = await client.get(config.SOURCE_URL)
+    resp.raise_for_status()
+    return resp.text
 
 
-async def scrape(browser) -> List[dict]:
+async def scrape(client: httpx.AsyncClient) -> List[dict]:
     """Holt die Seite und parst die Schiffsliste."""
-    html = await fetch_html(browser)
+    html = await fetch_html(client)
     return parse_arrivals(html)

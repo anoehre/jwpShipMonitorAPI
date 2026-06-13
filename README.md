@@ -1,14 +1,17 @@
 # JadeWeserPort Schiffsankünfte API
 
 FastAPI-Service, der die [Schiffsankünfte des JadeWeserPort](https://www.jadeweserport.de/schiff-schiene/schiffsankuenfte-jadeweserport/)
-mit **Playwright** scrapt und liefert:
+per HTTP (`httpx` + `BeautifulSoup`) scrapt und liefert:
 
 - **Schiffe, die aktuell am Hafen liegen** (Status `Fest`)
 - **Schiffe, die in den nächsten 24 Stunden ankommen**
 
+Die Seite rendert die Tabelle serverseitig, daher genügt ein einfacher
+HTTP-Request – kein Browser nötig.
+
 Es wird **keine Datenbank** verwendet – gescrapt wird bei Bedarf. Ein kurzer
-In-Memory-Cache (Standard 60 s) verhindert lediglich einen Browser-Start bei
-jedem einzelnen Request.
+In-Memory-Cache (Standard 60 s) verhindert lediglich einen HTTP-Request bei
+jedem einzelnen Aufruf.
 
 ## Endpunkte
 
@@ -60,7 +63,6 @@ jedem einzelnen Request.
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-playwright install chromium
 
 uvicorn app.main:app --reload
 ```
@@ -74,13 +76,12 @@ pip install pytest
 pytest -q
 ```
 
-Die Tests prüfen den HTML-Parser isoliert (ohne Browser).
+Die Tests prüfen den HTML-Parser isoliert (ohne Netzwerk).
 
 ## Deployment auf Railway
 
-Das Projekt enthält ein `Dockerfile` (basierend auf dem offiziellen
-Playwright-Python-Image, inkl. vorinstallierter Browser) und eine
-`railway.json`. Railway baut automatisch über das Dockerfile.
+Das Projekt enthält ein schlankes `Dockerfile` (Basis `python:3.12-slim`) und
+eine `railway.json`. Railway baut automatisch über das Dockerfile.
 
 1. Repository nach GitHub pushen.
 2. In Railway: **New Project → Deploy from GitHub repo**.
@@ -102,8 +103,8 @@ railway up
 | `JWP_ARRIVAL_WINDOW_HOURS` | `24`                                 | Zeitfenster für "ankommende Schiffe"          |
 | `JWP_AT_PORT_STATUS`       | `fest`                               | Status, der "liegt am Hafen" bedeutet         |
 | `JWP_CACHE_TTL_SECONDS`    | `60`                                 | Cache-TTL in Sekunden (`0` = aus)             |
-| `JWP_NAV_TIMEOUT_MS`       | `20000`                              | Timeout für den Seitenaufruf (ms)             |
-| `JWP_USER_AGENT`           | Chrome-UA                            | User-Agent des Browsers                       |
+| `JWP_HTTP_TIMEOUT_SECONDS` | `20`                                 | Timeout für den HTTP-Request (Sekunden)       |
+| `JWP_USER_AGENT`           | Chrome-UA                            | User-Agent für den HTTP-Request               |
 
 ## Hinweise
 

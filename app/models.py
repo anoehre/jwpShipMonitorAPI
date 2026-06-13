@@ -46,4 +46,3 @@ class ShipsResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
-    browser_ready: bool
