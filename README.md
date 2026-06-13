@@ -80,6 +80,7 @@ Top-Level-Array im von DAKboard erwarteten Format (`value` Pflicht, `title`/`sub
   "datum": "2026-06-13",
   "uhrzeit": "14:26",
   "status": "rot",
+  "Zeitpunkt_DakBoard": "13.06. 14:26 Uhr",
   "zeitpunkt": "2026-06-13T14:26:00+02:00",
   "datum_raw": 13312,
   "uhrzeit_raw": 48363958,
@@ -92,6 +93,10 @@ Top-Level-Array im von DAKboard erwarteten Format (`value` Pflicht, `title`/`sub
 24 h her ist (Baden eher nicht ratsam), sonst **`grün`**. Die Schwelle ist über
 `JWP_WODE_AMPEL_HOURS` konfigurierbar; der Status wird bei jedem Abruf frisch
 berechnet.
+
+`Zeitpunkt_DakBoard` fasst Datum und Uhrzeit in **einen** String (`"13.06. 14:26 Uhr"`)
+zusammen – praktisch für DAKboard, das mehrere Einzelfelder schlecht nebeneinander
+darstellt.
 
 Quelle ist ein atvise/webMI-SCADA-System (Siemens-S7-SPS). Der Handshake
 (RSA-Session + MD5-Digests) wird in reinem Python nachgebaut – **kein Browser

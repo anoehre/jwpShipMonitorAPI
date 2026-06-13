@@ -67,6 +67,11 @@ class EinleitungResponse(BaseModel):
         description="Bade-Ampel: 'rot' wenn Einleitung < 24h her, sonst 'grün'",
         examples=["rot"],
     )
+    Zeitpunkt_DakBoard: str = Field(
+        ...,
+        description="Datum + Uhrzeit als ein String für DAKboard",
+        examples=["13.06. 14:26 Uhr"],
+    )
     zeitpunkt: datetime = Field(..., description="Datum + Uhrzeit kombiniert (ISO 8601, mit Zeitzone)")
     datum_raw: int = Field(..., description="Roher S7-DATE-Wert (Tage seit 1990-01-01)")
     uhrzeit_raw: int = Field(..., description="Roher S7-TIME_OF_DAY-Wert (ms seit Mitternacht)")

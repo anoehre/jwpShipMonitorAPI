@@ -137,6 +137,8 @@ async def fetch_letzte_einleitung(client: httpx.AsyncClient) -> dict:
     return {
         "datum": d.isoformat(),
         "uhrzeit": f"{t.hour:02d}:{t.minute:02d}",
+        # Kombiniertes Anzeigefeld für DAKboard, z. B. "13.06. 14:26 Uhr"
+        "Zeitpunkt_DakBoard": f"{d.day:02d}.{d.month:02d}. {t.hour:02d}:{t.minute:02d} Uhr",
         "zeitpunkt": zeitpunkt,
         "datum_raw": int(date_val),
         "uhrzeit_raw": int(time_val),
