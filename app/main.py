@@ -23,7 +23,7 @@ from .models import (
     ShipsResponse,
 )
 from .scraper import scrape
-from .schmutzwasser import fetch_letzte_einleitung
+from .schmutzwasser import ampel_status, fetch_letzte_einleitung
 
 
 class _Cache:
@@ -213,8 +213,11 @@ async def ships_at_port_dakboard():
 async def schmutzwassereinleitung():
     """Datum und Uhrzeit der letzten Mischwassereinleitung (Banter Siel)."""
     data: dict = await _cached(app.state.wode_cache, fetch_letzte_einleitung)
+    now = datetime.now(ZoneInfo(config.TIMEZONE))
+    status = ampel_status(data["zeitpunkt"], now, config.WODE_AMPEL_HOURS)
     return EinleitungResponse(
         **data,
-        scraped_at=app.state.wode_cache.scraped_at or datetime.now(ZoneInfo(config.TIMEZONE)),
+        status=status,
+        scraped_at=app.state.wode_cache.scraped_at or now,
         source=config.WODE_URL,
     )

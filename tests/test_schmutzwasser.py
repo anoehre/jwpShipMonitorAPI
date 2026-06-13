@@ -1,8 +1,13 @@
 """Tests für die S7-Wert-Dekodierung der Mischwassereinleitung."""
-from datetime import date
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from app.schmutzwasser import _decode_date, _decode_time, _rsa_pkcs1v15_encrypt
+from app.schmutzwasser import (
+    _decode_date,
+    _decode_time,
+    _rsa_pkcs1v15_encrypt,
+    ampel_status,
+)
 
 TZ = ZoneInfo("Europe/Berlin")
 
@@ -26,6 +31,30 @@ def test_decode_time_midnight_has_plus_one_offset():
     # 0 ms -> 1970-01-01 00:00 UTC -> Europe/Berlin 01:00 (konstanter +1h-Versatz)
     t = _decode_time(0, TZ)
     assert t.hour == 1
+
+
+def test_ampel_rot_wenn_juenger_als_24h():
+    now = datetime(2026, 6, 13, 12, 0, tzinfo=TZ)
+    event = now - timedelta(hours=5)
+    assert ampel_status(event, now, 24) == "rot"
+
+
+def test_ampel_gruen_wenn_aelter_als_24h():
+    now = datetime(2026, 6, 13, 12, 0, tzinfo=TZ)
+    event = now - timedelta(hours=30)
+    assert ampel_status(event, now, 24) == "grün"
+
+
+def test_ampel_grenze_genau_24h_ist_gruen():
+    now = datetime(2026, 6, 13, 12, 0, tzinfo=TZ)
+    event = now - timedelta(hours=24)
+    assert ampel_status(event, now, 24) == "grün"
+
+
+def test_ampel_zukunft_ist_rot():
+    now = datetime(2026, 6, 13, 12, 0, tzinfo=TZ)
+    event = now + timedelta(hours=1)
+    assert ampel_status(event, now, 24) == "rot"
 
 
 def test_rsa_output_is_even_length_hex():

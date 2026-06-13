@@ -42,3 +42,5 @@ WODE_ADDR_TIME = os.getenv(
     "JWP_WODE_ADDR_TIME",
     r"MW_Web_Visu\WEBVISU\CPU 312C\S7-Programm(1).DB 1.Zeiten.Uhrzeit_letzte_Einleitun",
 )
+# Schwelle (Stunden) für die Bade-Ampel: jünger = 'rot', älter/gleich = 'grün'
+WODE_AMPEL_HOURS = int(os.getenv("JWP_WODE_AMPEL_HOURS", "24"))

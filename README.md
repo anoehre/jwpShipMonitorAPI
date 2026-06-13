@@ -79,6 +79,7 @@ Top-Level-Array im von DAKboard erwarteten Format (`value` Pflicht, `title`/`sub
 {
   "datum": "2026-06-13",
   "uhrzeit": "14:26",
+  "status": "rot",
   "zeitpunkt": "2026-06-13T14:26:00+02:00",
   "datum_raw": 13312,
   "uhrzeit_raw": 48363958,
@@ -86,6 +87,11 @@ Top-Level-Array im von DAKboard erwarteten Format (`value` Pflicht, `title`/`sub
   "source": "http://93.240.84.156/webMI/"
 }
 ```
+
+`status` ist eine Bade-Ampel: **`rot`**, wenn die letzte Einleitung weniger als
+24 h her ist (Baden eher nicht ratsam), sonst **`grün`**. Die Schwelle ist über
+`JWP_WODE_AMPEL_HOURS` konfigurierbar; der Status wird bei jedem Abruf frisch
+berechnet.
 
 Quelle ist ein atvise/webMI-SCADA-System (Siemens-S7-SPS). Der Handshake
 (RSA-Session + MD5-Digests) wird in reinem Python nachgebaut – **kein Browser
@@ -144,6 +150,7 @@ railway up
 | `JWP_WODE_URL`             | atvise-webMI-URL                     | Daten-Endpunkt der Mischwassereinleitung      |
 | `JWP_WODE_ADDR_DATE`       | S7-Knotenadresse                     | OPC-UA-Adresse des Datums-Knotens             |
 | `JWP_WODE_ADDR_TIME`       | S7-Knotenadresse                     | OPC-UA-Adresse des Uhrzeit-Knotens            |
+| `JWP_WODE_AMPEL_HOURS`     | `24`                                 | Schwelle für die Bade-Ampel (rot/grün) in h   |
 
 ## Hinweise
 

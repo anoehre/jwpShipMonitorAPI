@@ -48,6 +48,14 @@ def _rsa_pkcs1v15_encrypt(msg: bytes, n: int, e: int) -> str:
     return ("0" + h) if len(h) % 2 else h
 
 
+def ampel_status(zeitpunkt: datetime, now: datetime, threshold_hours: int) -> str:
+    """Bade-Ampel: 'rot' wenn die Einleitung jünger als `threshold_hours` ist,
+    sonst 'grün'. (< Schwelle = rot, >= Schwelle = grün)."""
+    if now - zeitpunkt < timedelta(hours=threshold_hours):
+        return "rot"
+    return "grün"
+
+
 def _decode_date(days: int) -> date:
     """S7 DATE -> Kalenderdatum (Tage seit 1990-01-01)."""
     return date(1990, 1, 1) + timedelta(days=days)

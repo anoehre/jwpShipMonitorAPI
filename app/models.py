@@ -62,6 +62,11 @@ class EinleitungResponse(BaseModel):
 
     datum: str = Field(..., description="Datum der letzten Einleitung (ISO)", examples=["2026-06-13"])
     uhrzeit: str = Field(..., description="Uhrzeit wie auf der Quellseite angezeigt (HH:MM)", examples=["14:26"])
+    status: str = Field(
+        ...,
+        description="Bade-Ampel: 'rot' wenn Einleitung < 24h her, sonst 'grün'",
+        examples=["rot"],
+    )
     zeitpunkt: datetime = Field(..., description="Datum + Uhrzeit kombiniert (ISO 8601, mit Zeitzone)")
     datum_raw: int = Field(..., description="Roher S7-DATE-Wert (Tage seit 1990-01-01)")
     uhrzeit_raw: int = Field(..., description="Roher S7-TIME_OF_DAY-Wert (ms seit Mitternacht)")
