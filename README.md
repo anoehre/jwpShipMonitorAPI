@@ -21,6 +21,7 @@ jedem einzelnen Aufruf.
 | GET     | `/ships/at-port`   | Nur Schiffe am Hafen (Status `Fest`)                    |
 | GET     | `/ships/at-port-dakboardOutput` | Schiffe am Hafen im [DAKboard](https://dakboard.com)-Array-Format (`value`/`title`/`subtitle`) |
 | GET     | `/ships/arriving`  | Nur Ankünfte der nächsten 24 h                          |
+| GET     | `/schmutzwassereinleitung` | Datum/Uhrzeit der letzten Mischwassereinleitung (Banter Siel, Wilhelmshaven) |
 | GET     | `/health`          | Healthcheck (für Railway)                               |
 | GET     | `/docs`            | OpenAPI / Swagger UI                                    |
 
@@ -72,6 +73,26 @@ Top-Level-Array im von DAKboard erwarteten Format (`value` Pflicht, `title`/`sub
 ]
 ```
 
+### Beispielantwort `/schmutzwassereinleitung`
+
+```json
+{
+  "datum": "2026-06-13",
+  "uhrzeit": "14:26",
+  "zeitpunkt": "2026-06-13T14:26:00+02:00",
+  "datum_raw": 13312,
+  "uhrzeit_raw": 48363958,
+  "scraped_at": "2026-06-13T23:34:19+02:00",
+  "source": "http://93.240.84.156/webMI/"
+}
+```
+
+Quelle ist ein atvise/webMI-SCADA-System (Siemens-S7-SPS). Der Handshake
+(RSA-Session + MD5-Digests) wird in reinem Python nachgebaut – **kein Browser
+nötig**. Die Rohwerte sind S7-Typen: `datum_raw` = Tage seit 1990-01-01,
+`uhrzeit_raw` = Millisekunden seit Mitternacht. Die Uhrzeit spiegelt bewusst die
+Anzeige der Originalseite (deren JS rechnet via `new Date(ms)` konstant +1 h).
+
 ## Lokal ausführen
 
 ```powershell
@@ -120,6 +141,9 @@ railway up
 | `JWP_CACHE_TTL_SECONDS`    | `60`                                 | Cache-TTL in Sekunden (`0` = aus)             |
 | `JWP_HTTP_TIMEOUT_SECONDS` | `20`                                 | Timeout für den HTTP-Request (Sekunden)       |
 | `JWP_USER_AGENT`           | Chrome-UA                            | User-Agent für den HTTP-Request               |
+| `JWP_WODE_URL`             | atvise-webMI-URL                     | Daten-Endpunkt der Mischwassereinleitung      |
+| `JWP_WODE_ADDR_DATE`       | S7-Knotenadresse                     | OPC-UA-Adresse des Datums-Knotens             |
+| `JWP_WODE_ADDR_TIME`       | S7-Knotenadresse                     | OPC-UA-Adresse des Uhrzeit-Knotens            |
 
 ## Hinweise
 

@@ -15,8 +15,15 @@ import httpx
 from fastapi import FastAPI, HTTPException
 
 from . import config
-from .models import DakboardItem, HealthResponse, Ship, ShipsResponse
+from .models import (
+    DakboardItem,
+    EinleitungResponse,
+    HealthResponse,
+    Ship,
+    ShipsResponse,
+)
 from .scraper import scrape
+from .schmutzwasser import fetch_letzte_einleitung
 
 
 class _Cache:
@@ -24,17 +31,17 @@ class _Cache:
 
     def __init__(self, ttl: int):
         self.ttl = ttl
-        self._data: Optional[List[dict]] = None
+        self._data: Optional[object] = None
         self._at: float = 0.0
         self.scraped_at: Optional[datetime] = None
         self.lock = asyncio.Lock()
 
-    def get(self) -> Optional[List[dict]]:
+    def get(self) -> Optional[object]:
         if self._data is not None and (time.monotonic() - self._at) < self.ttl:
             return self._data
         return None
 
-    def set(self, data: List[dict]) -> None:
+    def set(self, data: object) -> None:
         self._data = data
         self._at = time.monotonic()
         self.scraped_at = datetime.now(ZoneInfo(config.TIMEZONE))
@@ -44,6 +51,7 @@ class _Cache:
 async def lifespan(app: FastAPI):
     # Einen HTTP-Client für die Prozesslaufzeit teilen (Connection-Reuse).
     app.state.cache = _Cache(config.CACHE_TTL_SECONDS)
+    app.state.wode_cache = _Cache(config.CACHE_TTL_SECONDS)
     app.state.client = httpx.AsyncClient(
         headers={"User-Agent": config.USER_AGENT},
         timeout=config.HTTP_TIMEOUT_SECONDS,
@@ -67,10 +75,8 @@ app = FastAPI(
 )
 
 
-async def _get_ships(app: FastAPI) -> List[dict]:
-    """Liefert gescrapte Rohdaten – aus dem Cache oder frisch gescrapt."""
-    cache: _Cache = app.state.cache
-
+async def _cached(cache: "_Cache", fetch):
+    """Liefert Daten aus dem Cache oder ruft `fetch(client)` frisch ab."""
     if config.CACHE_TTL_SECONDS > 0:
         cached = cache.get()
         if cached is not None:
@@ -83,14 +89,19 @@ async def _get_ships(app: FastAPI) -> List[dict]:
             if cached is not None:
                 return cached
         try:
-            data = await scrape(app.state.client)
+            data = await fetch(app.state.client)
         except Exception as exc:  # noqa: BLE001
             raise HTTPException(
                 status_code=502,
-                detail=f"Scraping fehlgeschlagen: {exc}",
+                detail=f"Abruf fehlgeschlagen: {exc}",
             ) from exc
         cache.set(data)
         return data
+
+
+async def _get_ships(app: FastAPI) -> List[dict]:
+    """Liefert gescrapte Schiffsdaten – aus dem Cache oder frisch gescrapt."""
+    return await _cached(app.state.cache, scrape)
 
 
 def _split(ships: List[dict]) -> tuple[List[Ship], List[Ship]]:
@@ -144,6 +155,7 @@ async def root():
             "/ships/at-port",
             "/ships/at-port-dakboardOutput",
             "/ships/arriving",
+            "/schmutzwassereinleitung",
             "/health",
         ],
     }
@@ -195,3 +207,14 @@ async def ships_at_port_dakboard():
     raw = await _get_ships(app)
     at_port, _ = _split(raw)
     return _to_dakboard(at_port)
+
+
+@app.get("/schmutzwassereinleitung", response_model=EinleitungResponse, tags=["schmutzwasser"])
+async def schmutzwassereinleitung():
+    """Datum und Uhrzeit der letzten Mischwassereinleitung (Banter Siel)."""
+    data: dict = await _cached(app.state.wode_cache, fetch_letzte_einleitung)
+    return EinleitungResponse(
+        **data,
+        scraped_at=app.state.wode_cache.scraped_at or datetime.now(ZoneInfo(config.TIMEZONE)),
+        source=config.WODE_URL,
+    )

@@ -29,3 +29,16 @@ USER_AGENT = os.getenv(
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/124.0 Safari/537.36",
 )
+
+# --- Mischwassereinleitung Banter Siel (Wilhelmshaven, atvise/webMI) ---
+# webMI-Datenendpunkt der Quellseite
+WODE_URL = os.getenv("JWP_WODE_URL", "http://93.240.84.156/webMI/")
+# OPC-UA-Adressen der beiden Knoten (S7-SPS)
+WODE_ADDR_DATE = os.getenv(
+    "JWP_WODE_ADDR_DATE",
+    r"MW_Web_Visu\WEBVISU\CPU 312C\S7-Programm(1).DB 1.Zeiten.Datum_letzte_Einleitung",
+)
+WODE_ADDR_TIME = os.getenv(
+    "JWP_WODE_ADDR_TIME",
+    r"MW_Web_Visu\WEBVISU\CPU 312C\S7-Programm(1).DB 1.Zeiten.Uhrzeit_letzte_Einleitun",
+)
