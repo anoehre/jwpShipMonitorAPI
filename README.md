@@ -19,6 +19,7 @@ jedem einzelnen Aufruf.
 |---------|--------------------|---------------------------------------------------------|
 | GET     | `/ships`           | Beides: Schiffe am Hafen **und** Ankünfte der nächsten 24 h |
 | GET     | `/ships/at-port`   | Nur Schiffe am Hafen (Status `Fest`)                    |
+| GET     | `/ships/at-port-dakboardOutput` | Schiffe am Hafen im [DAKboard](https://dakboard.com)-Array-Format (`value`/`title`/`subtitle`) |
 | GET     | `/ships/arriving`  | Nur Ankünfte der nächsten 24 h                          |
 | GET     | `/health`          | Healthcheck (für Railway)                               |
 | GET     | `/docs`            | OpenAPI / Swagger UI                                    |
@@ -55,6 +56,20 @@ jedem einzelnen Aufruf.
     }
   ]
 }
+```
+
+### Beispielantwort `/ships/at-port-dakboardOutput`
+
+Top-Level-Array im von DAKboard erwarteten Format (`value` Pflicht, `title`/`subtitle` optional):
+
+```json
+[
+  {
+    "value": "Maersk Virginia",
+    "title": "PGS",
+    "subtitle": "Ankunft 12.06.2026 03:30 · Abfahrt 13.06.2026 23:59"
+  }
+]
 ```
 
 ## Lokal ausführen

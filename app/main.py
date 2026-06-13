@@ -15,7 +15,7 @@ import httpx
 from fastapi import FastAPI, HTTPException
 
 from . import config
-from .models import HealthResponse, Ship, ShipsResponse
+from .models import DakboardItem, HealthResponse, Ship, ShipsResponse
 from .scraper import scrape
 
 
@@ -111,12 +111,41 @@ def _split(ships: List[dict]) -> tuple[List[Ship], List[Ship]]:
     return at_port, arriving
 
 
+def _to_dakboard(ships: List[Ship]) -> List[DakboardItem]:
+    """Wandelt Schiffe in das von DAKboard erwartete Array-Format um.
+
+    value = Schiffsname, title = Liniendienst, subtitle = Liegezeit (als Text,
+    da DAKboard keine Zeitstempel interpretiert).
+    """
+    items: List[DakboardItem] = []
+    for s in ships:
+        parts = []
+        if s.arrival_raw:
+            parts.append(f"Ankunft {s.arrival_raw}")
+        if s.departure_raw:
+            parts.append(f"Abfahrt {s.departure_raw}")
+        items.append(
+            DakboardItem(
+                value=s.name,
+                title=s.line,
+                subtitle=" · ".join(parts) or None,
+            )
+        )
+    return items
+
+
 @app.get("/", include_in_schema=False)
 async def root():
     return {
         "name": "JadeWeserPort Schiffsankünfte API",
         "docs": "/docs",
-        "endpoints": ["/ships", "/ships/at-port", "/ships/arriving", "/health"],
+        "endpoints": [
+            "/ships",
+            "/ships/at-port",
+            "/ships/at-port-dakboardOutput",
+            "/ships/arriving",
+            "/health",
+        ],
     }
 
 
@@ -153,3 +182,16 @@ async def ships_arriving():
     raw = await _get_ships(app)
     _, arriving = _split(raw)
     return arriving
+
+
+@app.get(
+    "/ships/at-port-dakboardOutput",
+    response_model=List[DakboardItem],
+    response_model_exclude_none=True,
+    tags=["ships"],
+)
+async def ships_at_port_dakboard():
+    """Schiffe am Hafen im DAKboard-Array-Format (value/title/subtitle)."""
+    raw = await _get_ships(app)
+    at_port, _ = _split(raw)
+    return _to_dakboard(at_port)

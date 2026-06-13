@@ -44,5 +44,18 @@ class ShipsResponse(BaseModel):
     )
 
 
+class DakboardItem(BaseModel):
+    """Ein Element im von DAKboard erwarteten JSON-Array-Format.
+
+    DAKboard rendert pro Array-Element eine Zeile/Kachel. `value` ist Pflicht,
+    `title` und `subtitle` sind optional. Datums-/Zeitwerte werden als reiner
+    Text geliefert, da DAKboard keine Zeitstempel interpretiert.
+    """
+
+    value: str = Field(..., description="Hauptwert (Pflicht), hier der Schiffsname")
+    title: Optional[str] = Field(None, description="Obere Beschriftung, hier der Liniendienst")
+    subtitle: Optional[str] = Field(None, description="Untere Beschriftung, hier die Liegezeit")
+
+
 class HealthResponse(BaseModel):
     status: str
